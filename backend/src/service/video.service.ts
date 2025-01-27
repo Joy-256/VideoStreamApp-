@@ -12,7 +12,9 @@ import { Request, Response } from 'express';
 
 @Injectable()
 export class VideoService {
-    constructor(@InjectModel(Video.name) private videoModel: Model<VideoDocument>) { }
+    constructor(@InjectModel(Video.name) private videoModel: Model<VideoDocument>) { 
+        console.log(this.videoModel)
+    }
 
     async createVideo(video: Object): Promise<Video> {
         const newVideo = new this.videoModel(video);
@@ -61,7 +63,7 @@ export class VideoService {
     async update(id, video: Video): Promise<Video | null> {
         return await this.videoModel.findByIdAndUpdate(id, video, { new: true })
     }
-    async delete(id): Promise<any> {
-        return await this.videoModel.findByIdAndRemove(id);
-    }
+    //async delete(id): Promise<any> {
+    //    return await this.videoModel.findByIdAndRemove(id);
+   // }
 }

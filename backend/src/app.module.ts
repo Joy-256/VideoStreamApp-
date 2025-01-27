@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, RequestMethod, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -15,14 +15,32 @@ import { UserService } from './service/user.service';
 import { UserController } from './controllers/user.controller';
 import { Video, VideoSchema } from './model/video.schema';
 import { User, UserSchema } from './model/user.schema';
+import { isAuthenticated } from './app.middleware';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
+
+require('dotenv').config();
+
+// Using environment variables without logging
+const dbUrl = process.env.DB_URL;
 
 
 @Module({
   imports: [
-     MongooseModule.forRoot('mongodb://localhost:27017/Stream'),
-     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-     MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
+    // ConfigModule to manage environment variables
+    ConfigModule.forRoot({
+      isGlobal: true, // Makes the ConfigModule globally available
+    }),
+    // MongooseModule with ConfigService for DB_URL
+    MongooseModule.forRootAsync({imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('DB_URL'),
+      }),
+      inject: [ConfigService],
+    }),
+    // Mongoose schemas
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
      JwtModule.register({
       secret,
       signOptions: { expiresIn: '2h' },
@@ -43,7 +61,17 @@ import { User, UserSchema } from './model/user.schema';
   controllers: [AppController, VideoController, UserController],
   providers: [AppService, VideoService, UserService],
 })
-export class AppModule {}
+
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(isAuthenticated)
+      .exclude(
+        { path: 'api/v1/video/:id', method: RequestMethod.GET }
+      )
+      .forRoutes(VideoController);
+  }
+}
 
 
 

@@ -7,8 +7,8 @@ export class User {
     @Prop({required:true, unique:true, lowercase:true})
     email: string;
     @Prop({required:true})
-    password: string
+    password: string;
     @Prop({default: Date.now() })
-    createdDate: Date
+    createdDate: Date;
 }
 export const UserSchema = SchemaFactory.createForClass(User)
